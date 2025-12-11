@@ -1,0 +1,50 @@
+class Alphabet:
+    def __init__(self, lang, letters):
+        self.lang = lang
+        self.letters = letters
+
+    def printLetters(self):
+        # Можно распечатать каждую букву по отдельности
+        for letter in self.letters:
+            print(f"Letter: {letter}")
+
+    def lettersNum(self):
+        # Возвращаем число, а не печатаем
+        return len(self.letters)
+
+
+class EnglishAlphabet(Alphabet):
+    __letters_num = 26   # "приватный" атрибут для количества букв
+
+    def __init__(self):
+        # Вызываем конструктор родителя: язык + буквы алфавита
+        super().__init__('Eng', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+
+    def is_en_letter(self, letter):
+        # Проверяем, есть ли буква в алфавите
+        return letter.upper() in self.letters
+
+    def lettersNum(self):
+        # Переопределяем метод, используя "приватное" поле
+        return EnglishAlphabet.__letters_num
+
+    @staticmethod
+    def example():
+        return "London is the capital of Great Britain."
+
+
+# Создаём объект английского алфавита
+alph = EnglishAlphabet()
+
+# Печатаем буквы
+alph.printLetters()
+
+# Количество букв
+print(f"Кількість літер: {alph.lettersNum()}")
+
+# Проверка принадлежности букв
+print(f"Чи належить 'c': {alph.is_en_letter('c')}")
+print(f"Чи належить 'щ': {alph.is_en_letter('щ')}")
+
+# Пример текста
+print(EnglishAlphabet.example())
