@@ -1,0 +1,89 @@
+import requests
+import json
+
+BASE_URL = "http://127.0.0.1:5000"
+
+
+def log_result(f, title, resp):
+    f.write("\n" + "=" * 60 + "\n")
+    f.write(title + "\n")
+    f.write(f"STATUS: {resp.status_code}\n")
+    try:
+        data = resp.json()
+        f.write("JSON:\n" + json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    except Exception:
+        f.write("TEXT:\n" + resp.text + "\n")
+
+    print("\n" + "=" * 60)
+    print(title)
+    print("STATUS:", resp.status_code)
+    try:
+        print(json.dumps(resp.json(), ensure_ascii=False, indent=2))
+    except Exception:
+        print(resp.text)
+
+
+def main():
+    with open("results.txt", "w", encoding="utf-8") as f:
+
+        # 1) Retrieve all existing students (GET).
+        r = requests.get(f"{BASE_URL}/students")
+        log_result(f, "1) GET /students (all students)", r)
+
+        # 2) Create three students (POST).
+        students_to_create = [
+            {"first_name": "Alex", "last_name": "Smith", "age": 25},
+            {"first_name": "John", "last_name": "Rembo", "age": 33},
+            {"first_name": "Arnold", "last_name": "Schwarzenegger", "age": 50},
+        ]
+
+        created_ids = []
+
+        for i, payload in enumerate(students_to_create, start=1):
+            r = requests.post(f"{BASE_URL}/students", json=payload)
+            log_result(f, f"2.{i}) POST /students create student {i}", r)
+            if r.status_code == 201:
+                created_ids.append(int(r.json()["id"]))
+
+        # 3) Retrieve information about all existing students (GET).
+        r = requests.get(f"{BASE_URL}/students")
+        log_result(f, "3) GET /students (all students after POST)", r)
+
+        if len(created_ids) < 3:
+            print("\nNot all students were created. Fix errors above and re-run.")
+            return
+
+        first_id, second_id, third_id = created_ids[0], created_ids[1], created_ids[2]
+
+        # 4) Update the age of the second student (PATCH).
+        r = requests.patch(f"{BASE_URL}/students/{second_id}", json={"age": 34})
+        log_result(f, f"4) PATCH /students/{second_id} (update age)", r)
+
+        # 5) Retrieve information about the second student (GET).
+        r = requests.get(f"{BASE_URL}/students/{second_id}")
+        log_result(f, f"5) GET /students/{second_id}", r)
+
+        # 6) Update first name, last name and age of the third student (PUT).
+        put_payload = {"first_name": "Arnie", "last_name": "Schwarz", "age": 51}
+        r = requests.put(f"{BASE_URL}/students/{third_id}", json=put_payload)
+        log_result(f, f"6) PUT /students/{third_id} (update all fields)", r)
+
+        # 7) Retrieve information about the third student (GET).
+        r = requests.get(f"{BASE_URL}/students/{third_id}")
+        log_result(f, f"7) GET /students/{third_id}", r)
+
+        # 8) Retrieve all existing students (GET).
+        r = requests.get(f"{BASE_URL}/students")
+        log_result(f, "8) GET /students (all students before DELETE)", r)
+
+        # 9) Delete the first user (DELETE).
+        r = requests.delete(f"{BASE_URL}/students/{first_id}")
+        log_result(f, f"9) DELETE /students/{first_id}", r)
+
+        # 10) Retrieve all existing students (GET).
+        r = requests.get(f"{BASE_URL}/students")
+        log_result(f, "10) GET /students (all students after DELETE)", r)
+
+
+if __name__ == "__main__":
+    main()
