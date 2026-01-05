@@ -1,0 +1,9 @@
+.git
+
+.gitignore
+
+_pychache__/
+
+venv/   
+
+.vscode/    
