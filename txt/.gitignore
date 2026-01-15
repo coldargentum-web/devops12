@@ -1,9 +1,7 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
 .git
-
-.gitignore
-
-_pychache__/
-
-venv/   
-
-.vscode/    
+.vscode/
