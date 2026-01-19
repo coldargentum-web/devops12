@@ -1,0 +1,89 @@
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+
+  # =========================
+  # Jenkins MASTER (Docker)
+  # =========================
+  config.vm.define "Master" do |master|
+    master.vm.box = "ubuntu/jammy64"
+    master.vm.hostname = "jenkins-master"
+
+    master.vm.network "private_network", ip: "192.168.56.101"
+    master.vm.network "forwarded_port", guest: 8080, host: 8080
+
+    master.vm.provider "virtualbox" do |vb|
+      vb.name = "Master"
+      vb.memory = 4096
+      vb.cpus = 2
+    end
+
+    master.vm.provision "shell", inline: <<-SHELL
+      set -e
+
+      apt-get update -y
+      apt-get install -y ca-certificates curl gnupg
+
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+
+      cat >/etc/apt/sources.list.d/docker.list <<EOF
+deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable
+EOF
+
+      apt-get update -y
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+      # Jenkins in Docker (idempotent: start if exists, else run)
+      if docker ps -a --format '{{.Names}}' | grep -q '^jenkins_step2$'; then
+        docker start jenkins_step2 || true
+      else
+        docker run -d --name jenkins_step2 \
+          -p 8080:8080 -p 50000:50000 \
+          --restart=on-failure \
+          -v jenkins_home:/var/jenkins_home \
+          jenkins/jenkins:lts
+      fi
+    SHELL
+  end
+
+  # =========================
+  # Jenkins SLAVE (Agent host)
+  # =========================
+  config.vm.define "Slave" do |slave|
+    slave.vm.box = "ubuntu/jammy64"
+    slave.vm.hostname = "jenkins-slave"
+
+    slave.vm.network "private_network", ip: "192.168.56.102"
+
+    slave.vm.provider "virtualbox" do |vb|
+      vb.name = "Slave"
+      vb.memory = 4096
+      vb.cpus = 2
+    end
+
+    slave.vm.provision "shell", inline: <<-SHELL
+      set -e
+
+      apt-get update -y
+      apt-get install -y ca-certificates curl gnupg
+
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+
+      cat >/etc/apt/sources.list.d/docker.list <<EOF
+deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable
+EOF
+
+      apt-get update -y
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+      # Java for Jenkins agent
+      apt-get install -y openjdk-17-jre-headless
+
+      # Allow vagrant user to run docker without sudo
+      usermod -aG docker vagrant || true
+    SHELL
+  end
+end
