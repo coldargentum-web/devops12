@@ -1,0 +1,71 @@
+pipeline {
+  agent { label 'slave' }
+
+  environment {
+    // локальные теги (без registry) — удобно для build/test
+    LOCAL_IMAGE = "step_project2"
+    DOCKERHUB_CRED = "dockerhub"
+
+    // GitLab
+    GIT_CRED  = "git_cred"
+    REPO_URL  = "https://gitlab.com/dan-it/groups/devops_soft.git"
+    APP_DIR   = "forStep2"
+  }
+
+  stages {
+    stage('Pull the code') {
+      steps {
+        git credentialsId: "${GIT_CRED}", branch: "main", url: "${REPO_URL}"
+      }
+    }
+
+    stage('Build Docker image') {
+      steps {
+        dir("${APP_DIR}") {
+          sh "docker build -t ${LOCAL_IMAGE}:${BUILD_NUMBER} -t ${LOCAL_IMAGE}:latest ."
+        }
+      }
+    }
+
+    stage('Run tests') {
+      steps {
+        script {
+          // Надёжно, даже если в Dockerfile есть ENTRYPOINT
+          int rc = sh(
+            script: "docker run --rm -w /app --entrypoint sh ${LOCAL_IMAGE}:${BUILD_NUMBER} -lc 'npm test'",
+            returnStatus: true
+          )
+          if (rc != 0) {
+            echo "Tests failed"
+            error("Tests failed")
+          }
+        }
+      }
+    }
+
+    stage('Push to Docker Hub') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CRED}", usernameVariable: "DH_USER", passwordVariable: "DH_PASS")]) {
+          sh 'echo "$DH_PASS" | docker login -u "$DH_USER" --password-stdin'
+
+          // ТЕГИРУЕМ в namespace того пользователя, которым залогинились
+          sh 'docker tag ${LOCAL_IMAGE}:${BUILD_NUMBER} ${DH_USER}/step_project2:${BUILD_NUMBER}'
+          sh 'docker tag ${LOCAL_IMAGE}:latest ${DH_USER}/step_project2:latest'
+
+          // PUSH
+          sh 'docker push ${DH_USER}/step_project2:${BUILD_NUMBER}'
+          sh 'docker push ${DH_USER}/step_project2:latest'
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker logout || true'
+      // чистим локальные образы
+      sh "docker image rm -f ${LOCAL_IMAGE}:${BUILD_NUMBER} ${LOCAL_IMAGE}:latest || true"
+      sh 'docker image rm -f renard17/step_project2:${BUILD_NUMBER} renard17/step_project2:latest || true'
+    }
+  }
+}
