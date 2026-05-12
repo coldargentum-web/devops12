@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      containers:
+      - name: flask-app
+        image: student-api:latest # Это имя итеджа, который вы соберете
+        imagePullPolicy: Never    # Важно для локального Minikube
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "mysql-service"
+        - name: DB_USER
+          value: "petshop"
+        - name: DB_PASSWORD
+          value: "hard_passw0rd"
+        - name: DB_NAME
+          value: "shop"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-service
+spec:
+  type: NodePort
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30001
+  selector:
+    app: flask-app

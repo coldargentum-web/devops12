@@ -1,0 +1,10 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[remote "origin"]
+	url = https://oauth2:glpat-v-kRb5MFFvYaiim7iBVNaWM6MQpvOjEKdTppM24ydA8.01.17086ik34@gitlab.com/renard17/my-proiect3.git
+	fetch = +refs/heads/*:refs/remotes/origin/*

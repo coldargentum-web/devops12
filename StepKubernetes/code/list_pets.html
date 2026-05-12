@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Our Pets</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #f4f4f4; margin: 10px 0; padding: 15px; border-radius: 5px; border-left: 5px solid #007bff; }
+        .price { font-weight: bold; color: #28a745; }
+    </style>
+</head>
+<body>
+    <h1>🐾 Our Pet Shop Residents</h1>
+    
+    {% if items %}
+        <ul>
+            {% for item in items %}
+                <li>
+                    <strong>{{ item.name }}</strong> — <span class="price">${{ item.price }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>The shop is currently empty. Go back and add a friend!</p>
+    {% endif %}
+
+    <hr>
+    <a href="/">← Back to Home</a>
+</body>
+</html>

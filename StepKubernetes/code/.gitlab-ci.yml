@@ -1,0 +1,56 @@
+stages:
+  - test
+  - build
+  - deploy
+
+# 1. Этап тестирования
+test_app:
+  stage: test
+  image: python:3.9-slim
+  services:
+    - name: mysql:5.7
+      alias: mysql
+  variables:
+    MYSQL_DATABASE: shop
+    MYSQL_ROOT_PASSWORD: hard_passw0rd
+    DB_HOST: mysql
+    DB_USER: root
+    DB_PASSWORD: hard_passw0rd
+  script: |
+    apt-get update && apt-get install -y default-mysql-client
+    pip install -r requirements.txt
+    echo "Waiting for MySQL to start..."
+    for i in {1..30}; do
+      if mysqladmin ping -h mysql --silent; then
+        echo "MySQL is UP and running!"
+        break
+      fi
+      echo "Waiting for database... (attempt $i)"
+      sleep 2
+    done
+    python -m unittest tests/test_app.py
+
+# 2. Этап сборки образа
+build_image:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+  script: |
+    docker build -t student-api:latest .
+
+# 3. Этап имитации деплоя
+deploy_to_k8s:
+  stage: deploy
+  image:
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  script: |
+    echo "Starting deployment simulation..."
+    ls -l k8s/
+    echo "SUCCESS: Manifests are present and ready for deployment."
+  only:
+    - main
