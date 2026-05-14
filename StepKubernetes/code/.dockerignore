@@ -1,0 +1,6 @@
+data/
+logs/
+.git/
+.gitlab-ci.yml
+k8s/
+README.md
