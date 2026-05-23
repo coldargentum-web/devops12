@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s      # Как часто собирать метрики (каждые 15 секунд)
+  evaluation_interval: 15s  # Как часто проверять правила алертов
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        # Указываем адрес AlertManager. 
+        # Так как они в одной сети docker-compose, мы обращаемся к нему просто по имени контейнера.
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  # Подключаем файл с нашими правилами алертов
+  - 'alerts.yml'
+
+scrape_configs:
+  # Простейшая задача: Prometheus следит сам за собой
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
