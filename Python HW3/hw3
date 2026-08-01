@@ -1,0 +1,47 @@
+import random
+
+
+def get_valid_input(prompt):
+    while True:
+        try:
+            value = int(input(prompt))
+            if value <= 0:
+                raise ValueError("Введіть позитивне ціле число.")
+            return value
+        except ValueError as e:
+            print(f"Error: {e}")
+
+
+def check_professor_consistency(student_count):
+    student_scores = []
+    for _ in range(student_count):
+        score = random.randint(50, 100)
+        result = random.choice([True, False])
+        student_scores.append((score, result))
+
+    print("\nРезультати студентів:")
+    for idx, (score, result) in enumerate(student_scores, 1):
+        verdict = "P" if result else "F"
+        print(f"Студент {idx}: {score} балів [{verdict}]")
+
+    passing_scores = [score for score, result in student_scores if result]
+    failing_scores = [score for score, result in student_scores if not result]
+
+    min_passing_score = min(passing_scores, default=100)
+    max_failing_score = max(failing_scores, default=50)
+
+    print("\nАналіз оцінювання:")
+    print(f"Мінімальний прохідний бал: {min_passing_score}")
+    print(f"Максимальний непрохідний бал: {max_failing_score}")
+
+    if min_passing_score <= max_failing_score:
+        print("Висновок: Професор непослідовний.")
+    else:
+        print(
+            f"Висновок: Професор є послідовним. Прохідний бал у діапазоні від {max_failing_score + 1} до {min_passing_score}."
+        )
+
+
+if __name__ == "__main__":
+    student_q = get_valid_input("Введіть кількість студентів -> ")
+    check_professor_consistency(student_q)
